@@ -1,3 +1,12 @@
+/**
+ * Project: Solo Lab 7 Assignment
+ * Purpose Details: A space-themed game where the player controls a spaceship,
+ *                  shoots projectiles at falling obstacles, collects health power-ups,
+ *                  and survives a countdown timer across multiple difficulty levels.
+ * Course: IST 242
+ * Author: Nafiz Hussain
+ */
+
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.*;
@@ -13,66 +22,158 @@ import javax.sound.sampled.*;
 public class SpaceGame extends JFrame implements KeyListener {
 
     // ── Constants ────────────────────────────────────────────────────────────
-    private static final int WIDTH            = 500;
-    private static final int HEIGHT           = 500;
-    private static final int PLAYER_WIDTH     = 50;
-    private static final int PLAYER_HEIGHT    = 50;
-    private static final int OBSTACLE_WIDTH   = 40;
-    private static final int OBSTACLE_HEIGHT  = 40;
+
+    /** The width of the game window in pixels. */
+    private static final int WIDTH = 500;
+
+    /** The height of the game window in pixels. */
+    private static final int HEIGHT = 500;
+
+    /** The width of the player's spaceship in pixels. */
+    private static final int PLAYER_WIDTH = 50;
+
+    /** The height of the player's spaceship in pixels. */
+    private static final int PLAYER_HEIGHT = 50;
+
+    /** The width of each obstacle in pixels. */
+    private static final int OBSTACLE_WIDTH = 40;
+
+    /** The height of each obstacle in pixels. */
+    private static final int OBSTACLE_HEIGHT = 40;
+
+    /** The width of the projectile in pixels. */
     private static final int PROJECTILE_WIDTH = 5;
-    private static final int PROJECTILE_HEIGHT= 10;
-    private static final int PLAYER_SPEED     = 15;
-    private static final int OBSTACLE_SPEED   = 3;
+
+    /** The height of the projectile in pixels. */
+    private static final int PROJECTILE_HEIGHT = 10;
+
+    /** The number of pixels the player moves per key press. */
+    private static final int PLAYER_SPEED = 15;
+
+    /** The base number of pixels obstacles move downward per game tick. */
+    private static final int OBSTACLE_SPEED = 3;
+
+    /** The number of pixels the projectile moves upward per game tick. */
     private static final int PROJECTILE_SPEED = 10;
-    private static final int POWERUP_SIZE     = 20;
-    private static final int POWERUP_SPEED    = 2;
-    private static final int GAME_DURATION    = 60;   // seconds
-    private static final int MAX_HEALTH       = 5;
+
+    /** The size (width and height) of a health power-up in pixels. */
+    private static final int POWERUP_SIZE = 20;
+
+    /** The number of pixels power-ups move downward per game tick. */
+    private static final int POWERUP_SPEED = 2;
+
+    /** The total game duration in seconds. */
+    private static final int GAME_DURATION = 60;
+
+    /** The maximum health the player can have. */
+    private static final int MAX_HEALTH = 5;
 
     // ── Score / state ────────────────────────────────────────────────────────
-    private int  score       = 0;
-    private int  health      = MAX_HEALTH;
-    private int  level       = 1;
-    private int  timeLeft    = GAME_DURATION;
-    private boolean isGameOver         = false;
-    private boolean isProjectileVisible= false;
-    private boolean isFiring           = false;
+
+    /** The player's current score. */
+    private int score = 0;
+
+    /** The player's current health. */
+    private int health = MAX_HEALTH;
+
+    /** The current game level (1–5). */
+    private int level = 1;
+
+    /** The number of seconds remaining in the countdown timer. */
+    private int timeLeft = GAME_DURATION;
+
+    /** Whether the game is currently in a game-over state. */
+    private boolean isGameOver = false;
+
+    /** Whether a projectile is currently visible and active on screen. */
+    private boolean isProjectileVisible = false;
+
+    /** Whether the player is currently in the firing cooldown period. */
+    private boolean isFiring = false;
 
     // ── Shield ───────────────────────────────────────────────────────────────
-    private boolean shieldActive    = false;
-    private long    shieldStartTime = 0;
-    private long    shieldDuration  = 3000; // ms
+
+    /** Whether the player's shield is currently active. */
+    private boolean shieldActive = false;
+
+    /** The system time in milliseconds when the shield was activated. */
+    private long shieldStartTime = 0;
+
+    /** The duration the shield stays active in milliseconds. */
+    private long shieldDuration = 3000;
 
     // ── Player / projectile positions ────────────────────────────────────────
-    private int playerX, playerY;
-    private int projectileX, projectileY;
+
+    /** The x-coordinate of the player's spaceship. */
+    private int playerX;
+
+    /** The y-coordinate of the player's spaceship. */
+    private int playerY;
+
+    /** The x-coordinate of the active projectile. */
+    private int projectileX;
+
+    /** The y-coordinate of the active projectile. */
+    private int projectileY;
 
     // ── Collections ──────────────────────────────────────────────────────────
-    private List<Point> obstacles  = new ArrayList<>();
-    private List<Point> stars      = new ArrayList<>();
-    private List<Point> powerUps   = new ArrayList<>();
+
+    /** The list of current obstacle positions on screen. */
+    private List<Point> obstacles = new ArrayList<>();
+
+    /** The list of star positions used to render the background. */
+    private List<Point> stars = new ArrayList<>();
+
+    /** The list of current health power-up positions on screen. */
+    private List<Point> powerUps = new ArrayList<>();
 
     // ── Sprite sheet (4 × 1) ─────────────────────────────────────────────────
+
+    /** The sprite sheet image containing 4 obstacle sprites in a single row. */
     private BufferedImage spriteSheet;
+
+    /** The width of a single sprite on the sprite sheet. */
     private int spriteWidth;
+
+    /** The height of a single sprite on the sprite sheet. */
     private int spriteHeight;
 
     // ── Ship image ───────────────────────────────────────────────────────────
+
+    /** The image used to render the player's spaceship. */
     private BufferedImage shipImage;
 
     // ── Audio ────────────────────────────────────────────────────────────────
+
+    /** The file path to the fire sound effect. */
     private String fireSound;
+
+    /** The file path to the collision sound effect. */
     private String collisionSound;
 
     // ── UI ───────────────────────────────────────────────────────────────────
+
+    /** The main game panel where all drawing takes place. */
     private JPanel gamePanel;
+
+    /** The label that displays the current score in blue. */
     private JLabel scoreLabel;
-    private Timer  timer;
-    private Timer  countdownTimer;
+
+    /** The main game loop timer that calls update() and repaint() every 20ms. */
+    private Timer timer;
+
+    /** The countdown timer that decrements timeLeft every second. */
+    private Timer countdownTimer;
 
     // ─────────────────────────────────────────────────────────────────────────
     //  Constructor
     // ─────────────────────────────────────────────────────────────────────────
+
+    /**
+     * Constructs and initializes the SpaceGame window.
+     * Sets up the game panel, score label, player position, stars, images,
+     * audio, game loop timer, and countdown timer.
+     */
     public SpaceGame() {
         setTitle("Space Game");
         setSize(WIDTH, HEIGHT);
@@ -124,7 +225,7 @@ public class SpaceGame extends JFrame implements KeyListener {
         }
 
         // ── Load audio ───────────────────────────────────────────────────────
-        fireSound      = "src/fire.wav";            // Feature 5
+        fireSound      = "src/fire.wav";                // Feature 5
         collisionSound = "src/collision.wav";
 
         // ── Game loop (20 ms ≈ 50 fps) ───────────────────────────────────────
@@ -154,6 +255,13 @@ public class SpaceGame extends JFrame implements KeyListener {
     // ─────────────────────────────────────────────────────────────────────────
     //  Feature 1 – Generate stars
     // ─────────────────────────────────────────────────────────────────────────
+
+    /**
+     * Generates a list of random star positions for the background.
+     *
+     * @param numStars The number of stars to generate.
+     * @return A list of Point objects representing the x, y positions of each star.
+     */
     private List<Point> generateStars(int numStars) {
         List<Point> starsList = new ArrayList<>();
         Random random = new Random();
@@ -168,6 +276,12 @@ public class SpaceGame extends JFrame implements KeyListener {
     // ─────────────────────────────────────────────────────────────────────────
     //  Feature 1 – Random colour helper
     // ─────────────────────────────────────────────────────────────────────────
+
+    /**
+     * Generates a random RGB color for use with star rendering.
+     *
+     * @return A Color object with random red, green, and blue component values.
+     */
     public static Color generateRandomColor() {
         Random rand = new Random();
         int r = rand.nextInt(256);
@@ -179,6 +293,14 @@ public class SpaceGame extends JFrame implements KeyListener {
     // ─────────────────────────────────────────────────────────────────────────
     //  Feature 5 – Play a sound file fresh each time (avoids Clip reuse issues)
     // ─────────────────────────────────────────────────────────────────────────
+
+    /**
+     * Plays a WAV audio file on a new background thread.
+     * Automatically converts 24-bit PCM audio to 16-bit PCM for Java compatibility.
+     * The Clip is closed automatically when playback finishes.
+     *
+     * @param filename The file path to the WAV audio file to play.
+     */
     private void playSound(String filename) {
         if (filename == null) return;
         new Thread(() -> {
@@ -190,11 +312,11 @@ public class SpaceGame extends JFrame implements KeyListener {
                 AudioFormat targetFormat = new AudioFormat(
                         AudioFormat.Encoding.PCM_SIGNED,
                         baseFormat.getSampleRate(),
-                        16,                          // force 16-bit
+                        16,                           // force 16-bit
                         baseFormat.getChannels(),
                         baseFormat.getChannels() * 2, // 2 bytes per channel
                         baseFormat.getSampleRate(),
-                        false                        // little-endian
+                        false                         // little-endian
                 );
 
                 AudioInputStream converted = AudioSystem.getAudioInputStream(targetFormat, ais);
@@ -215,15 +337,29 @@ public class SpaceGame extends JFrame implements KeyListener {
     // ─────────────────────────────────────────────────────────────────────────
     //  Feature 6 – Shield methods
     // ─────────────────────────────────────────────────────────────────────────
+
+    /**
+     * Activates the player's shield and records the activation time.
+     * While active, the shield blocks obstacle collisions for shieldDuration milliseconds.
+     */
     private void activateShield() {
         shieldActive    = true;
         shieldStartTime = System.currentTimeMillis();
     }
 
+    /**
+     * Deactivates the player's shield immediately.
+     */
     private void deactivateShield() {
         shieldActive = false;
     }
 
+    /**
+     * Checks whether the player's shield is currently active.
+     * Automatically deactivates the shield if its duration has expired.
+     *
+     * @return true if the shield is active and within its duration, false otherwise.
+     */
     private boolean isShieldActive() {
         if (!shieldActive) return false;
         if (System.currentTimeMillis() - shieldStartTime >= shieldDuration) {
@@ -236,15 +372,21 @@ public class SpaceGame extends JFrame implements KeyListener {
     // ─────────────────────────────────────────────────────────────────────────
     //  Reset
     // ─────────────────────────────────────────────────────────────────────────
+
+    /**
+     * Resets all game state variables to their initial values and restarts
+     * both the game loop timer and the countdown timer.
+     * Called when the player presses the ESC key.
+     */
     private void reset() {
-        score              = 0;
-        health             = MAX_HEALTH;
-        level              = 1;
-        timeLeft           = GAME_DURATION;
-        isGameOver         = false;
-        isProjectileVisible= false;
-        isFiring           = false;
-        shieldActive       = false;
+        score               = 0;
+        health              = MAX_HEALTH;
+        level               = 1;
+        timeLeft            = GAME_DURATION;
+        isGameOver          = false;
+        isProjectileVisible = false;
+        isFiring            = false;
+        shieldActive        = false;
         playerX = WIDTH / 2 - PLAYER_WIDTH / 2;
         playerY = HEIGHT - PLAYER_HEIGHT - 20;
         obstacles.clear();
@@ -257,6 +399,15 @@ public class SpaceGame extends JFrame implements KeyListener {
     // ─────────────────────────────────────────────────────────────────────────
     //  Draw
     // ─────────────────────────────────────────────────────────────────────────
+
+    /**
+     * Renders all game elements to the screen each frame.
+     * Draws the background, stars, player ship, shield, projectile,
+     * obstacles, power-ups, HUD (health, timer, level, score),
+     * and the game-over overlay when applicable.
+     *
+     * @param g The Graphics context provided by the game panel's paintComponent method.
+     */
     private void draw(Graphics g) {
         // Background
         g.setColor(Color.BLACK);
@@ -311,7 +462,7 @@ public class SpaceGame extends JFrame implements KeyListener {
         // Feature 8 – Power-ups (green "+" shape)
         g.setColor(Color.GREEN);
         for (Point p : powerUps) {
-            g.fillRect(p.x + POWERUP_SIZE / 2 - 3, p.y,               6, POWERUP_SIZE);
+            g.fillRect(p.x + POWERUP_SIZE / 2 - 3, p.y,                        6, POWERUP_SIZE);
             g.fillRect(p.x,                          p.y + POWERUP_SIZE / 2 - 3, POWERUP_SIZE, 6);
         }
 
@@ -354,6 +505,13 @@ public class SpaceGame extends JFrame implements KeyListener {
     // ─────────────────────────────────────────────────────────────────────────
     //  Update
     // ─────────────────────────────────────────────────────────────────────────
+
+    /**
+     * Updates all game logic each frame.
+     * Handles obstacle and power-up movement and spawning, projectile movement,
+     * level progression, and all collision detection between the player,
+     * projectile, obstacles, and power-ups.
+     */
     private void update() {
         if (isGameOver) return;
 
@@ -446,6 +604,14 @@ public class SpaceGame extends JFrame implements KeyListener {
     // ─────────────────────────────────────────────────────────────────────────
     //  KeyListener
     // ─────────────────────────────────────────────────────────────────────────
+
+    /**
+     * Handles key press events for player input.
+     * LEFT/RIGHT arrows move the ship, SPACE fires a projectile,
+     * S activates the shield, and ESC resets the game.
+     *
+     * @param e The KeyEvent triggered by the player's key press.
+     */
     @Override
     public void keyPressed(KeyEvent e) {
         int key = e.getKeyCode();
@@ -457,15 +623,15 @@ public class SpaceGame extends JFrame implements KeyListener {
 
         if (isGameOver) return;
 
-        if (key == KeyEvent.VK_LEFT  && playerX > 0)
+        if (key == KeyEvent.VK_LEFT && playerX > 0)
             playerX -= PLAYER_SPEED;
         else if (key == KeyEvent.VK_RIGHT && playerX < WIDTH - PLAYER_WIDTH)
             playerX += PLAYER_SPEED;
         else if (key == KeyEvent.VK_SPACE && !isFiring) {
-            isFiring           = true;
-            projectileX        = playerX + PLAYER_WIDTH / 2 - PROJECTILE_WIDTH / 2;
-            projectileY        = playerY;
-            isProjectileVisible= true;
+            isFiring            = true;
+            projectileX         = playerX + PLAYER_WIDTH / 2 - PROJECTILE_WIDTH / 2;
+            projectileY         = playerY;
+            isProjectileVisible = true;
             playSound(fireSound);                        // Feature 5
             new Thread(() -> {
                 try   { Thread.sleep(500); isFiring = false; }
@@ -476,12 +642,32 @@ public class SpaceGame extends JFrame implements KeyListener {
         }
     }
 
-    @Override public void keyTyped(KeyEvent e)   {}
-    @Override public void keyReleased(KeyEvent e){}
+    /**
+     * Not used but required by the KeyListener interface.
+     *
+     * @param e The KeyEvent triggered when a key is typed.
+     */
+    @Override
+    public void keyTyped(KeyEvent e) {}
+
+    /**
+     * Not used but required by the KeyListener interface.
+     *
+     * @param e The KeyEvent triggered when a key is released.
+     */
+    @Override
+    public void keyReleased(KeyEvent e) {}
 
     // ─────────────────────────────────────────────────────────────────────────
     //  Main
     // ─────────────────────────────────────────────────────────────────────────
+
+    /**
+     * The entry point of the application.
+     * Creates and displays the SpaceGame window on the Swing Event Dispatch Thread.
+     *
+     * @param args Command-line arguments (not used).
+     */
     public static void main(String[] args) {
         SwingUtilities.invokeLater(() -> new SpaceGame().setVisible(true));
     }
